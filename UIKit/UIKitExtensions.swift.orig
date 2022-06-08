@@ -11,9 +11,7 @@ import XCTest
 
 public extension XCTestCase {
     
-    /// This method prepares a ``NoAnimationNavigationController``  inside the key window
-    /// and gives it a first viewcontroller
-    func setupRootNavigationControllerInWindow() {
+    func setupRootViewControllerInWindow() {
         guard let window = UIApplication.shared.keyWindow else { return }
         
         let navigationController = NoAnimationNavigationController()
@@ -23,9 +21,6 @@ public extension XCTestCase {
         window.rootViewController = navigationController
     }
     
-    ///``UIPreparedTestCase`` instances call this method in their ``setUp`` method in
-    /// order to hook view lifecycle events to expectations. Please avoid using this method directly; instead,
-    /// resort to using ``UIPreparedTestCase`` class instead
     func prepareUIKitForTesting() {
         UIViewController.swizzlePresent()
         UIViewController.swizzleViewDidAppear()
@@ -33,33 +28,90 @@ public extension XCTestCase {
         UIViewController.swizzleViewDidDisappear()
     }
     
-    /// Changes the root View Controller in the currenty key window, in order for it to be able
-    /// to appear. Please make sure to run this method before testing any rendered element in the view of
-    /// `viewController`.
-    /// - Parameter viewController: the View Controller that shall appear on simulator screen
-    ///  as soon as window is rendered
     func setRootViewController(to viewController: UIViewController?) {
         UIApplication.shared.keyWindow?.rootViewController = viewController
     }
     
-    
-    /// A reference to the root view controller in the current key window
     var rootViewController: UIViewController? {
         return UIApplication.shared.keyWindow?.rootViewController
     }
     
-    
-    /// This method uses expectation to wait a user defined amount of time. This can be useful to prevent the simulator
-    /// from exiting from the application as soon as the test asserments complete, and allow to observe the graphical
-    /// rendering of the tested code. Beware that this method does not pause the application, which effectively keeps running
-    /// in foreground. This means that interactions, animations and possible background events can occur in the specified time interval
-    /// - Parameter timeout: The amount in seconds to wait, after which the test fulfills the expectation and ends continues running the test
     func wait(timeout: TimeInterval) {
         let expectation = XCTestExpectation(description: "Waiting for \(timeout) seconds")
         DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: {
             expectation.fulfill()
         })
         XCTWaiter().wait(for: [expectation], timeout: timeout + 1)
+    }
+}
+
+// MARK: rendered graphics test helpers
+public extension XCTestCase {
+    
+    func testViewIsVisible(_ view: UIView) {
+        XCTAssertNotEqual(view.frame.height, .zero)
+        XCTAssertNotEqual(view.frame.width, .zero)
+        XCTAssertNotEqual(view.alpha, .zero)
+        XCTAssertFalse(view.isHidden)
+    }
+    
+    func testViewIsNotVisible(_ view: UIView) {
+        if !view.isHidden, view.frame != .zero, view.alpha != 0, view.superview != nil {
+            XCTFail()
+        }
+    }
+    
+    func testView(_ view: UIView, isOnTheLeftOf secondView: UIView) {
+        let firstViewFrame: CGRect = view.superview!.convert(view.frame, to: nil)
+        let secondViewFrame: CGRect = secondView.superview!.convert(secondView.frame, to: nil)
+        
+        XCTAssertGreaterThanOrEqual(Int(secondViewFrame.minX), Int(firstViewFrame.maxX))
+    }
+    
+    func testView(_ view: UIView, isOnTheRightOf secondView: UIView) {
+        let firstViewFrame: CGRect = view.superview!.convert(view.frame, to: nil)
+        let secondViewFrame: CGRect = secondView.superview!.convert(secondView.frame, to: nil)
+        
+        XCTAssertGreaterThanOrEqual(Int(firstViewFrame.minX), Int(secondViewFrame.maxX))
+    }
+    
+    func testView(_ view: UIView, isAbove secondView: UIView) {
+        let firstViewFrame: CGRect = view.superview!.convert(view.frame, to: nil)
+        let secondViewFrame: CGRect = secondView.superview!.convert(secondView.frame, to: nil)
+        
+        XCTAssertLessThanOrEqual(Int(firstViewFrame.maxY), Int(secondViewFrame.minY))
+    }
+    
+    func testView(_ view: UIView, isBelow secondView: UIView) {
+        let firstViewFrame: CGRect = view.superview!.convert(view.frame, to: nil)
+        let secondViewFrame: CGRect = secondView.superview!.convert(secondView.frame, to: nil)
+        
+        XCTAssertLessThanOrEqual(Int(secondViewFrame.maxY), Int(firstViewFrame.minY))
+    }
+    
+    func testView(_ view: UIView, isCenteredVerticallyWithRespectTo secondView: UIView) {
+        let firstViewCenter: CGPoint = view.superview!.convert(view.center, to: nil)
+        let secondViewCenter: CGPoint = secondView.superview!.convert(secondView.center, to: nil)
+        
+        XCTAssertEqual(Int(firstViewCenter.y), Int(secondViewCenter.y))
+    }
+    
+    func testView(_ view: UIView, isCenteredHorizontallyWithRespectTo secondView: UIView) {
+        let firstViewCenter: CGPoint = view.superview!.convert(view.center, to: nil)
+        let secondViewCenter: CGPoint = secondView.superview!.convert(secondView.center, to: nil)
+        
+        XCTAssertEqual(Int(firstViewCenter.x), Int(secondViewCenter.x))
+    }
+    
+    func testView(_ view: UIView, isInside secondView: UIView) {
+        
+        let firstViewFrame: CGRect = view.superview!.convert(view.frame, to: nil)
+        let secondViewFrame: CGRect = secondView.superview!.convert(secondView.frame, to: nil)
+        
+        XCTAssertGreaterThanOrEqual(Int(firstViewFrame.minX), Int(secondViewFrame.minX))
+        XCTAssertLessThanOrEqual(Int(firstViewFrame.maxX), Int(secondViewFrame.maxX))
+        XCTAssertGreaterThanOrEqual(Int(firstViewFrame.minY), Int(secondViewFrame.minY))
+        XCTAssertLessThanOrEqual(Int(firstViewFrame.maxY), Int(secondViewFrame.maxY))
     }
 }
 

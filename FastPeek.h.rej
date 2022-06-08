@@ -1,0 +1,17 @@
+***************
+*** 3,9 ****
+  //  FastPeek
+  //
+  //  Created by Antonio Epifani on 03/06/22.
+- //  Copyright © 2022 Matteo Tagliafico. All rights reserved.
+  //
+  
+  #import <Foundation/Foundation.h>
+--- 3,9 ----
+  //  FastPeek
+  //
+  //  Created by Antonio Epifani on 03/06/22.
++ //  Copyright © 2022 Antonio Epifani. All rights reserved.
+  //
+  
+  #import <Foundation/Foundation.h>
